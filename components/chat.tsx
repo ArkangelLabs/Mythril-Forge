@@ -8,7 +8,6 @@ import McpApproval from "./mcp-approval";
 import { Item, McpApprovalRequestItem } from "@/lib/assistant";
 import LoadingMessage from "./loading-message";
 import useConversationStore from "@/stores/useConversationStore";
-import usePromptStore from "@/stores/usePromptStore";
 
 interface ChatProps {
   items: Item[];
