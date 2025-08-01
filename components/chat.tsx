@@ -26,7 +26,7 @@ const Chat: React.FC<ChatProps> = ({
   // This state is used to provide better user experience for non-English IMEs such as Japanese
   const [isComposing, setIsComposing] = useState(false);
   const { isAssistantLoading } = useConversationStore();
-  const { themeColor } = usePromptStore();
+  // const { themeColor } = usePromptStore();
 
   const scrollToBottom = () => {
     itemsEndRef.current?.scrollIntoView({ behavior: "instant" });

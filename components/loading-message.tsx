@@ -3,7 +3,7 @@ import AITextLoading from "./kokonutui/ai-text-loading";
 import usePromptStore from "@/stores/usePromptStore";
 
 const LoadingMessage: React.FC = () => {
-  const { loadingMessages, themeColor } = usePromptStore();
+  const { loadingMessages } = usePromptStore();
   
   return (
     <div className="text-sm">

@@ -447,7 +447,7 @@ export const processMessages = async () => {
               chatMessages.push(productDisplay);
               setChatMessages([...chatMessages]);
             }
-          } catch (e) {
+          } catch {
             // Not product data or parsing failed, continue normally
           }
           
