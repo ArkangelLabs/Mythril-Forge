@@ -1,16 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from "next-auth/middleware"
 
-// Simple middleware - no authentication for now
-export function middleware(_request: NextRequest) {
-  // Allow all requests to pass through
-  return NextResponse.next();
-}
+export default withAuth(
+  function middleware(req) {
+    // Add any additional middleware logic here if needed
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token
+    },
+  }
+)
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    // Protect all routes except auth pages, API auth, and static files
+    '/((?!api/auth|auth/login|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
