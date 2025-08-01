@@ -4,6 +4,7 @@ import { handleTool } from "@/lib/tools/tools-handling";
 import useConversationStore from "@/stores/useConversationStore";
 import { getTools } from "./tools/tools";
 import { Annotation } from "@/components/annotations";
+import usePromptStore, { PERSONALITY_OPTIONS, STYLE_OPTIONS } from "@/stores/usePromptStore";
 import { functionsMap } from "@/config/functions";
 
 const normalizeAnnotation = (annotation: any): Annotation => ({
@@ -66,11 +67,49 @@ export interface McpApprovalRequestItem {
   arguments?: string;
 }
 
+export interface ProductDisplayItem {
+  type: "product_display";
+  id: string;
+  products: Array<{
+    product_id: string;
+    title: string;
+    description: string;
+    url: string;
+    image_url: string;
+    price_range: {
+      min: string;
+      max: string;
+      currency: string;
+    };
+    product_type?: string;
+    tags?: string[];
+    options?: Array<{
+      [key: string]: string[];
+    }>;
+    variants?: Array<{
+      variant_id: string;
+      title: string;
+      price: string;
+      currency: string;
+      image_url?: string;
+      available: boolean;
+    }>;
+    availabilityMatrix?: string[];
+  }>;
+  pagination?: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    currentPage: number;
+    nextPage?: number;
+  };
+}
+
 export type Item =
   | MessageItem
   | ToolCallItem
   | McpListToolsItem
-  | McpApprovalRequestItem;
+  | McpApprovalRequestItem
+  | ProductDisplayItem;
 
 export const handleTurn = async (
   messages: any[],
@@ -141,14 +180,26 @@ export const processMessages = async () => {
     setChatMessages,
     setConversationItems,
     setAssistantLoading,
+    addToolUsageLog,
   } = useConversationStore.getState();
 
   const tools = getTools();
+  
+  // Get prompt configuration
+  const { name, personality, style, traits } = usePromptStore.getState();
+  
+  // Replace placeholders in the developer prompt
+  const processedPrompt = DEVELOPER_PROMPT
+    .replace("{{name}}", name)
+    .replace("{{personality}}", PERSONALITY_OPTIONS[personality])
+    .replace("{{style}}", STYLE_OPTIONS[style])
+    .replace("{{traits}}", traits.join(", "));
+  
   const allConversationItems = [
     // Adding developer prompt as first item in the conversation
     {
       role: "developer",
-      content: DEVELOPER_PROMPT,
+      content: processedPrompt,
     },
     ...conversationItems,
   ];
@@ -247,17 +298,26 @@ export const processMessages = async () => {
           }
           case "function_call": {
             functionArguments += item.arguments || "";
-            chatMessages.push({
-              type: "tool_call",
-              tool_type: "function_call",
-              status: "in_progress",
+            const toolCall = {
+              type: "tool_call" as const,
+              tool_type: "function_call" as const,
+              status: "in_progress" as const,
               id: item.id,
               name: item.name, // function name,e.g. "get_weather"
               arguments: item.arguments || "",
               parsedArguments: {},
               output: null,
-            });
+            };
+            chatMessages.push(toolCall);
             setChatMessages([...chatMessages]);
+            // Log tool usage
+            addToolUsageLog({
+              type: "function_call",
+              name: item.name,
+              arguments: item.arguments,
+              status: "in_progress",
+              timestamp: Date.now(),
+            });
             break;
           }
           case "web_search_call": {
@@ -282,17 +342,26 @@ export const processMessages = async () => {
           }
           case "mcp_call": {
             mcpArguments = item.arguments || "";
-            chatMessages.push({
-              type: "tool_call",
-              tool_type: "mcp_call",
-              status: "in_progress",
+            const toolCall = {
+              type: "tool_call" as const,
+              tool_type: "mcp_call" as const,
+              status: "in_progress" as const,
               id: item.id,
               name: item.name,
               arguments: item.arguments || "",
               parsedArguments: item.arguments ? parse(item.arguments) : {},
               output: null,
-            });
+            };
+            chatMessages.push(toolCall);
             setChatMessages([...chatMessages]);
+            // Log tool usage
+            addToolUsageLog({
+              type: "mcp_call",
+              name: item.name,
+              arguments: item.arguments,
+              status: "in_progress",
+              timestamp: Date.now(),
+            });
             break;
           }
           case "code_interpreter_call": {
@@ -335,6 +404,15 @@ export const processMessages = async () => {
           // Record tool output
           toolCallMessage.output = JSON.stringify(toolResult);
           setChatMessages([...chatMessages]);
+          // Update tool log
+          addToolUsageLog({
+            type: "function_call",
+            name: toolCallMessage.name,
+            arguments: toolCallMessage.parsedArguments,
+            output: toolResult,
+            status: "completed",
+            timestamp: Date.now(),
+          });
           conversationItems.push({
             type: "function_call_output",
             call_id: toolCallMessage.call_id,
@@ -354,6 +432,34 @@ export const processMessages = async () => {
           toolCallMessage.output = item.output;
           toolCallMessage.status = "completed";
           setChatMessages([...chatMessages]);
+          
+          // Check if the output contains product data
+          try {
+            const outputData = typeof item.output === 'string' ? JSON.parse(item.output) : item.output;
+            if (outputData && outputData.products && Array.isArray(outputData.products)) {
+              // Create a ProductDisplayItem
+              const productDisplay: ProductDisplayItem = {
+                type: "product_display",
+                id: `product-display-${Date.now()}`,
+                products: outputData.products,
+                pagination: outputData.pagination
+              };
+              chatMessages.push(productDisplay);
+              setChatMessages([...chatMessages]);
+            }
+          } catch (e) {
+            // Not product data or parsing failed, continue normally
+          }
+          
+          // Update tool log
+          addToolUsageLog({
+            type: "mcp_call",
+            name: toolCallMessage.name,
+            arguments: toolCallMessage.parsedArguments,
+            output: item.output,
+            status: "completed",
+            timestamp: Date.now(),
+          });
         }
         break;
       }
@@ -436,6 +542,15 @@ export const processMessages = async () => {
           toolCallMessage.output = output;
           toolCallMessage.status = "completed";
           setChatMessages([...chatMessages]);
+          // Update tool log
+          addToolUsageLog({
+            type: "web_search_call",
+            name: "web_search",
+            arguments: {},
+            output: output,
+            status: "completed",
+            timestamp: Date.now(),
+          });
         }
         break;
       }

@@ -64,8 +64,8 @@ const useToolsStore = create<StoreState>()(
         },
       },
       mcpConfig: {
-        server_label: "",
-        server_url: "",
+        server_label: "thebraroom",
+        server_url: "https://thebraroom.ca/api/mcp",
         allowed_tools: "",
         skip_approval: true,
       },
@@ -83,9 +83,10 @@ const useToolsStore = create<StoreState>()(
       setFunctionsEnabled: (enabled) => {
         set({ functionsEnabled: enabled });
       },
-      mcpEnabled: false,
+      mcpEnabled: true,
       setMcpEnabled: (enabled) => {
-        set({ mcpEnabled: enabled });
+        // MCP is always enabled, ignore the parameter
+        set({ mcpEnabled: true });
       },
       codeInterpreterEnabled: false,
       setCodeInterpreterEnabled: (enabled) => {
@@ -93,7 +94,17 @@ const useToolsStore = create<StoreState>()(
       },
       setVectorStore: (store) => set({ vectorStore: store }),
       setWebSearchConfig: (config) => set({ webSearchConfig: config }),
-      setMcpConfig: (config) => set({ mcpConfig: config }),
+      setMcpConfig: (config) => {
+        // MCP config is hardcoded, ignore any updates
+        set({ 
+          mcpConfig: {
+            server_label: "thebraroom",
+            server_url: "https://thebraroom.ca/api/mcp",
+            allowed_tools: "",
+            skip_approval: true,
+          }
+        });
+      },
     }),
     {
       name: "tools-store",

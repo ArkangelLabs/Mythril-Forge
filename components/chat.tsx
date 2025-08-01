@@ -4,11 +4,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import ToolCall from "./tool-call";
 import Message from "./message";
 import Annotations from "./annotations";
-import McpToolsList from "./mcp-tools-list";
 import McpApproval from "./mcp-approval";
 import { Item, McpApprovalRequestItem } from "@/lib/assistant";
 import LoadingMessage from "./loading-message";
 import useConversationStore from "@/stores/useConversationStore";
+import usePromptStore from "@/stores/usePromptStore";
 
 interface ChatProps {
   items: Item[];
@@ -26,6 +26,7 @@ const Chat: React.FC<ChatProps> = ({
   // This state is used to provide better user experience for non-English IMEs such as Japanese
   const [isComposing, setIsComposing] = useState(false);
   const { isAssistantLoading } = useConversationStore();
+  const { themeColor } = usePromptStore();
 
   const scrollToBottom = () => {
     itemsEndRef.current?.scrollIntoView({ behavior: "instant" });
@@ -49,7 +50,7 @@ const Chat: React.FC<ChatProps> = ({
   return (
     <div className="flex justify-center items-center size-full">
       <div className="flex grow flex-col h-full max-w-[750px] gap-2">
-        <div className="h-[90vh] overflow-y-scroll px-10 flex flex-col">
+        <div className="h-[90vh] overflow-y-scroll overflow-x-hidden px-10 flex flex-col">
           <div className="mt-auto space-y-5 pt-4">
             {items.map((item, index) => (
               <React.Fragment key={index}>
@@ -67,7 +68,7 @@ const Chat: React.FC<ChatProps> = ({
                       )}
                   </div>
                 ) : item.type === "mcp_list_tools" ? (
-                  <McpToolsList item={item} />
+                  null // Don't display MCP tools list
                 ) : item.type === "mcp_approval_request" ? (
                   <McpApproval
                     item={item as McpApprovalRequestItem}

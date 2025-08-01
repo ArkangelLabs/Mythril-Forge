@@ -4,12 +4,36 @@ import { ToolCallItem } from "@/lib/assistant";
 import { BookOpenText, Clock, Globe, Zap, Code2, Download } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coy } from "react-syntax-highlighter/dist/esm/styles/prism";
+import ProductCarousel from "./product-carousel";
 
 interface ToolCallProps {
   toolCall: ToolCallItem;
 }
 
+function ProductDisplayCell({ toolCall }: ToolCallProps) {
+  // Parse the output to get products
+  let parsedOutput;
+  try {
+    parsedOutput = typeof toolCall.output === "string" 
+      ? JSON.parse(toolCall.output) 
+      : toolCall.output;
+  } catch {
+    return null;
+  }
+
+  const products = parsedOutput?.products || [];
+  
+  if (products.length === 0) {
+    return null;
+  }
+
+  // Use the existing ProductCarousel component
+  return <ProductCarousel item={{ type: "product_display", id: "carousel", products }} />;
+}
+
+
 function ApiCallCell({ toolCall }: ToolCallProps) {
+
   return (
     <div className="flex flex-col w-[70%] relative mb-[-8px]">
       <div>
@@ -95,37 +119,49 @@ function WebSearchCell({ toolCall }: ToolCallProps) {
 }
 
 function McpCallCell({ toolCall }: ToolCallProps) {
+  // Special handling for search_shop_catalog - only show products, no metadata
+  if (toolCall.name === "search_shop_catalog") {
+    return <ProductDisplayCell toolCall={toolCall} />;
+  }
+
   return (
     <div className="flex flex-col w-[70%] relative mb-[-8px]">
       <div>
         <div className="flex flex-col text-sm rounded-[16px]">
+          {/* Header */}
           <div className="font-semibold p-3 pl-0 text-gray-700 rounded-b-none flex gap-2">
             <div className="flex gap-2 items-center text-blue-500 ml-[-8px]">
               <Zap size={16} />
               <div className="text-sm font-medium">
                 {toolCall.status === "completed"
-                  ? `Called ${toolCall.name} via MCP tool`
-                  : `Calling ${toolCall.name} via MCP tool...`}
+                  ? `Called MCP tool${toolCall.name ? `: ${toolCall.name}` : ""}`
+                  : `Calling MCP tool${toolCall.name ? `: ${toolCall.name}` : ""}...`}
               </div>
             </div>
           </div>
 
+          {/* Arguments & Output */}
           <div className="bg-[#fafafa] rounded-xl py-2 ml-4 mt-2">
-            <div className="max-h-96 overflow-y-scroll text-xs border-b mx-6 p-2">
-              <SyntaxHighlighter
-                customStyle={{
-                  backgroundColor: "#fafafa",
-                  padding: "8px",
-                  paddingLeft: "0px",
-                  marginTop: 0,
-                  marginBottom: 0,
-                }}
-                language="json"
-                style={coy}
-              >
-                {JSON.stringify(toolCall.parsedArguments, null, 2)}
-              </SyntaxHighlighter>
-            </div>
+            {/* Arguments */}
+            {toolCall.parsedArguments && (
+              <div className="max-h-96 overflow-y-scroll text-xs border-b mx-6 p-2">
+                <SyntaxHighlighter
+                  customStyle={{
+                    backgroundColor: "#fafafa",
+                    padding: "8px",
+                    paddingLeft: "0px",
+                    marginTop: 0,
+                    marginBottom: 0,
+                  }}
+                  language="json"
+                  style={coy}
+                >
+                  {JSON.stringify(toolCall.parsedArguments, null, 2)}
+                </SyntaxHighlighter>
+              </div>
+            )}
+
+            {/* Output */}
             <div className="max-h-96 overflow-y-scroll mx-6 p-2 text-xs">
               {toolCall.output ? (
                 <SyntaxHighlighter
@@ -138,14 +174,19 @@ function McpCallCell({ toolCall }: ToolCallProps) {
                   language="json"
                   style={coy}
                 >
-                  {(() => {
-                    try {
-                      const parsed = JSON.parse(toolCall.output!);
-                      return JSON.stringify(parsed, null, 2);
-                    } catch {
-                      return toolCall.output!;
-                    }
-                  })()}
+                  {JSON.stringify(
+                    typeof toolCall.output === "string"
+                      ? (() => {
+                          try {
+                            return JSON.parse(toolCall.output);
+                          } catch {
+                            return toolCall.output;
+                          }
+                        })()
+                      : toolCall.output,
+                    null,
+                    2
+                  )}
                 </SyntaxHighlighter>
               ) : (
                 <div className="text-zinc-500 flex items-center gap-2 py-2">

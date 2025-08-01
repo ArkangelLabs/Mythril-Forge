@@ -14,10 +14,10 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Responses starter app",
-  description: "Starter app for the OpenAI Responses API",
+  title: "Mythril Forge",
+  description: "Mythril Forge application",
   icons: {
-    icon: "/openai_logo.svg",
+    icon: "https://e1by4nur2ksda2hf.public.blob.vercel-storage.com/MythrilLogos-4.svg",
   },
 };
 
