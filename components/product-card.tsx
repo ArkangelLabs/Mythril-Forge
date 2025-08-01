@@ -22,6 +22,8 @@ interface ProductCardProps {
     options?: Array<{
       name: string;
       values: string[];
+    } | {
+      [key: string]: string[];
     }>;
     variants?: Array<{
       variant_id: string;
@@ -71,15 +73,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Get available colors from options (handle both data structures)
   const colorOptions = product.options?.find(opt => {
     // New structure: { name: "Colours", values: [...] }
-    if (opt.name?.toLowerCase() === 'colours' || opt.name?.toLowerCase() === 'colors') {
+    if ('name' in opt && typeof opt.name === 'string' && (opt.name.toLowerCase() === 'colours' || opt.name.toLowerCase() === 'colors')) {
       return true;
     }
     // Legacy structure: { "Colours": [...] } or { "Colors": [...] }
-    return opt.Colours || opt.Colors;
+    if ('Colours' in opt || 'Colors' in opt) {
+      return true;
+    }
+    return false;
   });
   
-  const colors = colorOptions 
-    ? (colorOptions.values || colorOptions.Colours || colorOptions.Colors || [])
+  const colors: string[] = colorOptions 
+    ? ('values' in colorOptions ? colorOptions.values : (colorOptions as any).Colours || (colorOptions as any).Colors || [])
     : (product.variants ? 
         // Extract unique colors from variant titles, prioritizing those with images
         [...new Set(product.variants
@@ -132,15 +137,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Get available sizes from options (handle both data structures)
   const sizeOptions = product.options?.find(opt => {
     // New structure: { name: "Sizes", values: [...] }
-    if (opt.name?.toLowerCase() === 'sizes') {
+    if ('name' in opt && typeof opt.name === 'string' && opt.name.toLowerCase() === 'sizes') {
       return true;
     }
     // Legacy structure: { "Sizes": [...] }
-    return opt.Sizes;
+    if ('Sizes' in opt) {
+      return true;
+    }
+    return false;
   });
   
-  const sizes = sizeOptions 
-    ? (sizeOptions.values || sizeOptions.Sizes || [])
+  const sizes: string[] = sizeOptions 
+    ? ('values' in sizeOptions ? sizeOptions.values : (sizeOptions as any).Sizes || [])
     : [];
 
   // Check if product is in stock

@@ -4,7 +4,7 @@ import useConversationStore from "@/stores/useConversationStore";
 import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 
 export default function ToolUsageLog() {
-  const { toolUsageLogs, clearToolUsageLogs } = useConversationStore();
+  const { toolUsageLog, clearToolUsageLogs } = useConversationStore();
   const [expandedLogs, setExpandedLogs] = React.useState<Set<number>>(new Set());
 
   const toggleLog = (index: number) => {
@@ -21,7 +21,7 @@ export default function ToolUsageLog() {
     <div className="mt-6 border-t border-zinc-200 pt-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-zinc-700">Tool Usage Log</h3>
-        {toolUsageLogs.length > 0 && (
+        {toolUsageLog.length > 0 && (
           <button
             onClick={clearToolUsageLogs}
             className="text-xs text-zinc-500 hover:text-zinc-700 flex items-center gap-1"
@@ -33,10 +33,10 @@ export default function ToolUsageLog() {
       </div>
       
       <div className="space-y-2 max-h-64 overflow-y-auto">
-        {toolUsageLogs.length === 0 ? (
+        {toolUsageLog.length === 0 ? (
           <p className="text-xs text-zinc-500">No tool calls yet</p>
         ) : (
-          toolUsageLogs.map((log, index) => (
+          toolUsageLog.map((log, index) => (
             <div key={index} className="bg-zinc-50 rounded-md p-2 text-xs">
               <div
                 className="flex items-start gap-2 cursor-pointer"

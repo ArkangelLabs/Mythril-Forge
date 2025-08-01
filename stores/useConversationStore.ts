@@ -28,6 +28,7 @@ interface ConversationState {
   addConversationItem: (message: ChatCompletionMessageParam) => void;
   setAssistantLoading: (loading: boolean) => void;
   addToolUsageLog: (entry: ToolUsageLogEntry) => void;
+  clearToolUsageLogs: () => void;
   rawSet: (state: any) => void;
 }
 
@@ -53,6 +54,7 @@ const useConversationStore = create<ConversationState>((set) => ({
   setAssistantLoading: (loading) => set({ isAssistantLoading: loading }),
   addToolUsageLog: (entry) =>
     set((state) => ({ toolUsageLog: [...state.toolUsageLog, entry] })),
+  clearToolUsageLogs: () => set({ toolUsageLog: [] }),
   rawSet: set,
 }));
 
